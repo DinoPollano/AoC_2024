@@ -1,8 +1,12 @@
 use std::fs::File;
 use std::io::{self, BufRead};
+use std::path::PathBuf;
 
 pub fn load_data() -> (Vec<i32>, Vec<i32>) {
-    let result =  read_two_column_file("/Users/Dino/projects/advent_of_code_2024/day_1/src/ids.txt");
+    let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    d.push("resources/data/ids.txt");
+
+    let result =  read_two_column_file(d.as_path().to_str().unwrap());
     return result.unwrap()
 }
 
