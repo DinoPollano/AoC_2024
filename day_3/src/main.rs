@@ -7,9 +7,10 @@ fn main() {
     println!("DAY 3");
     let input = load_actual_data().clone();
     let mut mul_ops: Vec<&str> = Vec::new();
-   
+    let mut res: Vec<&str> = Vec::new();
+    let mut disabled: bool = false;
     for line in input.as_slice() {
-        let mut res = exctact_acceptalbe_mul_operators(line.as_str());
+        (res, disabled) = exctact_acceptalbe_mul_operators(&line.as_str(), disabled);
         mul_ops.append(&mut res);
     }
     let integers = extract_mul_integers(mul_ops);
@@ -27,28 +28,23 @@ fn extract_mul_operators(line: &str) -> Vec<&str> {
     output
 }
 
-fn exctact_acceptalbe_mul_operators(line: &str) -> Vec<&str> {
+fn exctact_acceptalbe_mul_operators(line: &str, mut disabled: bool) -> (Vec<&str>, bool) {
     let re = Regex::new(r"(mul\((\d+),(\d+)\))|don't\(\)|do\(\)").unwrap();
     let mut output: Vec<&str> = Vec::new();
-
-    let mut disabled: bool = false;
+    let mut thing: String = String::new();
     for m in re.find_iter(line) {
+        thing = m.as_str().to_string();
+
         match m.as_str() {
-            "don't()" => {
-                disabled = true;
+            "don't()" => disabled = true,
+            "do()" => disabled = false,
+            _ if !disabled && m.as_str().contains("mul") => {
+                output.push(&m.as_str());
             }
-            "do()" => {
-                disabled = false;
-            }
-            _ => {
-                if m.as_str().contains("mul") && (!disabled) {
-                    output.push(&m.as_str());
-                }
-            },
-        } 
-        
+            _ => {}
+        }
     }
-    output
+    (output, disabled)
 }
 
 fn extract_mul_integers(ops: Vec<&str>) -> Vec<(i32, i32)> {
@@ -76,7 +72,10 @@ fn mult_sum(input: Vec<(i32, i32)>) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::{data, extract_mul_integers, extract_mul_operators, mult_sum,  exctact_acceptalbe_mul_operators};
+    use crate::{
+        data, exctact_acceptalbe_mul_operators, extract_mul_integers, extract_mul_operators,
+        mult_sum,
+    };
 
     #[test]
     fn test_regex_extraction() {
@@ -89,7 +88,6 @@ mod tests {
             vec!("mul(2,4)", "mul(5,5)", "mul(11,8)", "mul(8,5)")
         );
     }
-
 
     #[test]
     fn test_regex_extraction_to_integers() {
@@ -112,35 +110,34 @@ mod tests {
             "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))",
         );
         let expected = vec!["mul(2,4)", "mul(8,5)"];
-        let result = exctact_acceptalbe_mul_operators(&input);
-        assert_eq!(expected,result);
+        let (result, _) = exctact_acceptalbe_mul_operators(&input, false);
+        assert_eq!(expected, result);
 
         let input2 = String::from(
             "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)adfasdfdont()asdfasd+mul(32,64](mul(11,8)undo()?mul(8,5))",
         );
 
         let expected2 = vec!["mul(2,4)", "mul(8,5)"];
-        let result2 = exctact_acceptalbe_mul_operators(&input2);
-        assert_eq!(expected2,result2);
+        let (result2, _) = exctact_acceptalbe_mul_operators(&input2, false);
+        assert_eq!(expected2, result2);
 
         let input3 = String::from(
             "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)do+mul(32,64](mul(11,8)undo()?112319-192391029312-9do()1231231909qweqwfqj[]()while)_mul(8,5))while(3,5)",
         );
 
         let expected3 = vec!["mul(2,4)", "mul(8,5)"];
-        let result3 = exctact_acceptalbe_mul_operators(&input3);
-        assert_eq!(expected3,result3);
-      
+        let (result3, _) = exctact_acceptalbe_mul_operators(&input3, false);
+        assert_eq!(expected3, result3);
     }
-    
+
     #[test]
     fn test_part_2() {
-         let input = String::from(
+        let input = String::from(
             "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))",
         );
 
         let mut mul_ops: Vec<&str> = Vec::new();
-        let mut res = exctact_acceptalbe_mul_operators(input.as_str());
+        let (mut res, _) = exctact_acceptalbe_mul_operators(input.as_str(), false);
         mul_ops.append(&mut res);
 
         let integers = extract_mul_integers(mul_ops);
