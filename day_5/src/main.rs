@@ -1,5 +1,8 @@
 mod data;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    usize,
+};
 
 pub fn sort_pages(order_vec: Vec<(u32, u32)>) -> HashMap<u32, HashSet<u32>> {
     let mut order_map: HashMap<u32, HashSet<u32>> = HashMap::new();
@@ -59,31 +62,22 @@ pub fn sort_updates(sorted_map: &HashMap<u32, HashSet<u32>>, updates: &Vec<u32>)
 
 pub fn sort_updates2(sorted_map: &HashMap<u32, HashSet<u32>>, updates: &Vec<u32>) -> Vec<u32> {
     let mut sorted: Vec<u32> = updates.clone();
-    let mut page = sorted.iter().skip(sorted.len()).peekable();
-    loop {
-       let mut page_number= match page.peek() {
-        Some(&value) => value,
-        None => break,
-       };
 
-        let order = match sorted_map.get(&page_number) {
-            Some(set) => set,
-            None => break,
-        };
-       let outliter =  page.position(|x|{!order.contains(x)});
-       match outliter{
-        Some(u32) => {
-            let number = page.remove(outliter.unwrap());
-            page.next_back();
-        },
-        None => {
-            page.next_back();
-        },
-
-       };
-        
+    let mut n = sorted.len() - 2;
+    print!("{:?}", updates);
+    while n > 0 {
+        let order = sorted_map.get(&sorted.get(n).unwrap()).unwrap();
+        let outlier = sorted.iter().skip(n).position(|x| !order.contains(x));
+        let blah = outlier.unwrap();
+        println!("{}:{:?}: outlier", sorted.get(n).unwrap(), order);
+        match outlier {
+            Some(outlier) => {
+                sorted.swap(n, blah);
+                n = sorted.len() - 2;
+            }
+            None => n -= 1,
+        }
     }
-
     sorted
 }
 
@@ -113,7 +107,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use crate::{check_pages_are_correct, data::load_test_data, sort_pages, sort_updates};
+    use crate::{check_pages_are_correct, data::load_test_data, sort_pages, sort_updates2};
     #[test]
     fn test_check_pages_are_correct() {
         let (order_vec, updates_vec) = load_test_data();
@@ -135,12 +129,15 @@ mod tests {
         let (order_vec, updates_vec) = load_test_data();
         let sorted = sort_pages(order_vec);
         assert_eq!(
-            sort_updates(&sorted, &(vec![75, 97, 47, 61, 53])),
+            sort_updates2(&sorted, &(vec![75, 97, 47, 61, 53])),
             vec![97, 75, 47, 61, 53]
         );
-        assert_eq!(sort_updates(&sorted, &(vec![61, 13, 29])), vec![61, 29, 13]);
         assert_eq!(
-            sort_updates(&sorted, &(vec![97, 13, 75, 29, 47])),
+            sort_updates2(&sorted, &(vec![61, 13, 29])),
+            vec![61, 29, 13]
+        );
+        assert_eq!(
+            sort_updates2(&sorted, &(vec![97, 13, 75, 29, 47])),
             vec![97, 75, 47, 29, 13]
         );
     }
